@@ -45,9 +45,58 @@ classification <- read.csv("data/Data-classification.csv")
 
 
 ```{r}
-str(classification)
-unique(classification$Target)
+str(classification[,1:21]) # Look at predictor variables
+unique(classification$Target) # Look at target variables
 ```
+## Data preprocessing
+
+### Make the target variable
+
+```{r}
+classification_target <- classification$Target
+str(classification_target) # of type integer 
+```
+
+### Make features
+
+```{r}
+classification_features <- classification[,1:21]
+```
+
+## Split into test and train data
+
+First we set the seed for reproducibility
+```{r}
+# Determine sample size
+set.seed(123)
+ind <- sample(1:2, nrow(classification), 
+              replace=TRUE, 
+              prob=c(0.8, 0.2))
+
+# Split features
+x_train <- classification_features[ind==1, ]
+x_test <- classification_features[ind==2, ]
+
+# Split target
+y_train <- classification_target[ind==1]
+y_test <- classification_target[ind==2]
+```
+
+## Scale features
+
+```{r}
+x_train <- scale(x_train)
+
+# Confirm means and std devs are now 0 and 1
+apply(x_train, 2, mean)
+
+ apply(x_train, 2, sd)
+```
+```{r}
+attributes(x_train) # previous means and sds stored here
+```
+
+##Model building 
 
 # Regression task
 
