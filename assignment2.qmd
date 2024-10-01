@@ -1,0 +1,37 @@
+---
+title: "Assignment 2"
+format: pdf
+editor: visual
+---
+
+```{r}
+
+```
+
+# Plagiarism declaration
+
+# Classification task
+
+```{r}
+classification <- read.csv("data/Data-classification.csv")
+```
+
+
+
+```{r}
+str(classification)
+unique(classification$Target)
+```
+
+# Regression task
+
+```{r}
+regression <- read.csv("data/Data-regression.csv")
+str(regression)
+```
+
+```{r}
+regression$target
+```
+
+
