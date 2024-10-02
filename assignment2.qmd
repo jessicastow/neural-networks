@@ -36,6 +36,14 @@ This report's repository can be viewed on [my GitHub profile](https://github.com
 
 \newpage
 
+```{r setup, include=FALSE}
+library(reticulate)
+reticulate::use_virtualenv("r-keras", required = TRUE)  
+library(tidyverse)
+library(keras3)
+
+```
+
 # Classification task
 
 ```{r}
@@ -90,13 +98,23 @@ x_train <- scale(x_train)
 # Confirm means and std devs are now 0 and 1
 apply(x_train, 2, mean)
 
- apply(x_train, 2, sd)
+apply(x_train, 2, sd)
 ```
 ```{r}
 attributes(x_train) # previous means and sds stored here
 ```
+One-hot encoding
+Convert target to binary "dummy" variables
 
-##Model building 
+```{r}
+y_train <- keras3::to_categorical(y_train)
+y_test_original <- y_test
+y_test <- keras3::to_categorical(y_test)
+
+dim(y_train)
+```
+
+## Model building 
 
 # Regression task
 
