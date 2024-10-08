@@ -36,26 +36,39 @@ This report's repository can be viewed on [my GitHub profile](https://github.com
 
 \newpage
 
-```{r setup, include=FALSE}
+# Introduction to Neural Networks
+
+```{r}
 library(reticulate)
 reticulate::use_virtualenv("r-keras", required = TRUE)  
 library(tidyverse)
 library(keras3)
-
+library(ggplot2)
 ```
 
-# Classification task
+# Multi-class Classification using Neural Networks
+
+## Objective
+
+The objective of this task was to employ a neural network to predict a single target variable using a set of feature variables. The aim was to demonstrate the ability to apply neural networks as a suitable tool for addressing a classification problem.
+
+## Data description 
+
+The dataset provided consisted of 21 numerical features, with the target variable being categorical and comprising five levels ("0", "1", "2", "3", and "4"). Limited information was available regarding the dataset features, which added a level of complexity when developing and fine-tuning the neural network to ensure accurate predictions.
 
 ```{r}
 classification <- read.csv("data/Data-classification.csv")
-```
 
+str(classification[,1:21]) # Look at predictor variables
+```
 
 
 ```{r}
-str(classification[,1:21]) # Look at predictor variables
 unique(classification$Target) # Look at target variables
 ```
+
+
+
 ## Data preprocessing
 
 ### Make the target variable
@@ -71,9 +84,78 @@ str(classification_target) # of type integer
 classification_features <- classification[,1:21]
 ```
 
+## Exploratory data analysis 
+
+Visualise spread of variables
+
+```{r include = TRUE, out.width="90%"}
+# Boxplot of spread of data
+par(las=2, # rotate horizontal axis labels
+    cex.axis = 0.6)
+
+boxplot(classification_features, 
+        main = "", 
+        horizontal = TRUE)
+
+title(main = "Figure 1: Boxplot of 21 features")
+```
+
+
+Per category 
+
+```{r}
+classification_balanced$Target <- as.factor(classification_balanced$Target)
+# Create the faceted box plot
+ggplot(classification_balanced, 
+       aes(x = Target, 
+           y = X10)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(x = "Target", y = "X1", title = "Box Plot of X1 by Target Category") +
+  theme_minimal()
+```
+
+## Check for imbalances in target variable
+
+Target variable data are highly imbalanced so we will later employ undersampling technique to handle this imbalance. 
+
+```{r}
+# Check the frequency distribution of the Target column
+table(classification$Target)
+
+# Check the proportion of each Target category
+prop.table(table(classification$Target))
+
+# Convert Target to a factor if it is not already
+classification$Target <- as.factor(classification$Target)
+
+# Visualize the distribution of the Target variable
+ggplot(classification, 
+       aes(x = Target)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  labs(x = "Target", y = "Count", title = "Distribution of Target Categories") +
+  theme_minimal()
+
+```
+
+```{r}
+# Correct imbalance using undersampling
+
+set.seed(123) # For reproducibility
+
+# Balance the dataset so that each category in the Target has exactly 310 observations
+classification_balanced <- classification %>%
+  group_by(Target) %>%           # Group by the Target variable
+  sample_n(size = 310, replace = TRUE) %>%  # Sample 310 observations from each group, with replacement
+  ungroup()                      # Ungroup to return a regular data frame
+
+# Check the result to ensure each Target category has 310 observations
+table(classification_balanced$Target) 
+```
+
 ## Split into test and train data
 
 First we set the seed for reproducibility
+
 ```{r}
 # Determine sample size
 set.seed(123)
@@ -100,11 +182,12 @@ apply(x_train, 2, mean)
 
 apply(x_train, 2, sd)
 ```
+
 ```{r}
 attributes(x_train) # previous means and sds stored here
 ```
-One-hot encoding
-Convert target to binary "dummy" variables
+
+One-hot encoding Convert target to binary "dummy" variables
 
 ```{r}
 y_train <- keras3::to_categorical(y_train)
@@ -114,7 +197,101 @@ y_test <- keras3::to_categorical(y_test)
 dim(y_train)
 ```
 
-## Model building 
+## Model building
+
+### Models
+
+Three different activation functions for classification
+
+1.  Soft-max (for multi-class classification models ) -Output: Produces a probability distribution over multiple classes, where the sum of the probabilities is 1. -Layer: Typically applied in the final layer for multi-class classification tasks.
+
+2.  Relu (hidden layers fir multiclass classification models) Output: Rectified Linear Unit outputs the input directly if it is positive; otherwise, it outputs zero. Layer: Not used in the output layer, but widely used in hidden layers to add non-linearity.
+
+3.  tanh
+
+Output: Produces values between -1 and 1, and is sometimes preferred over ReLU when the data is expected to have negative values or benefit from symmetric activation. Layer: Typically used in hidden layers but not the output layer.
+
+Built a basic feed-forward neural network using Keras
+
+### Create and define model
+
+```{r}
+input <- layer_input(shape = c(21)) # input shape = 10 since we have 10 features
+
+output <- input %>% 
+    layer_dense(units = 8, activation = 'relu') %>% # only using one layer, can adjust units for complexity
+    layer_dropout(rate = 0.5) %>% # can adjust drop out rate 
+    layer_dense(units = 5, activation = 'softmax') # output for 5 classes (0-4)
+
+model <- keras_model(inputs = input, outputs = output)
+
+summary(model)
+```
+
+### Compile model
+
+```{r}
+# Configure model for training
+model %>% compile(
+  loss = 'categorical_crossentropy', # loss function for multi-class classification
+  # optimizer instance
+  optimizer = optimizer_adam(learning_rate = 0.001),
+  # evaluate the model (during training & testing) based on the following metrics:
+  metrics =  c('accuracy'),
+)
+```
+
+### Model training
+
+```{r}
+history <- model %>% fit(
+  x_train, y_train, 
+  epochs = 50, # nr of times model trains on the entire data set
+  batch_size = 50, # # nr of samples processed before updating the model
+  validation_split = 0.2, # using 20% of data for validation
+  shuffle = TRUE # shuffle training data before each epoch
+)
+
+plot(history)
+```
+
+### Model evaluation
+
+Evaluate model perfromace on test data
+
+```{r}
+model %>% evaluate(x_test, y_test)
+```
+
+Confusion matrix
+
+```{r}
+y_test_hat <- model %>% 
+  predict(x_test) %>% 
+  op_argmax(axis=2) %>% 
+  as.numeric()
+
+table(y_test_original, y_test_hat)
+```
+
+Append predictions
+
+```{r}
+iris_testset <- classification %>% 
+  mutate(testset = ind == 2) %>%
+  filter(testset)
+
+iris_testset <- iris_testset %>%
+  mutate(obs_class = y_test_original, pred_class = y_test_hat)
+
+wrong_predictions <- iris_testset %>% filter(pred_class != obs_class)
+head(wrong_predictions)
+
+```
+
+## Recommendations
+
+To address the class imbalance of the target variable we employed undersampling. Alternative methods: oversampling by duplicating or generating synthetic data (SMOTE), assigning class weights to emphasise minority classes during training. 
 
 # Regression task
 
@@ -126,5 +303,3 @@ str(regression)
 ```{r}
 regression$target
 ```
-
-
