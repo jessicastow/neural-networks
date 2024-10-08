@@ -36,8 +36,6 @@ This report's repository can be viewed on [my GitHub profile](https://github.com
 
 \newpage
 
-# Introduction to Neural Networks
-
 ```{r}
 library(reticulate)
 reticulate::use_virtualenv("r-keras", required = TRUE)  
@@ -45,6 +43,8 @@ library(tidyverse)
 library(keras3)
 library(ggplot2)
 ```
+
+# Introduction to Neural Networks
 
 # Multi-class Classification using Neural Networks
 
@@ -60,33 +60,16 @@ The dataset provided consisted of 21 numerical features, with the target variabl
 classification <- read.csv("data/Data-classification.csv")
 
 str(classification[,1:21]) # Look at predictor variables
+
+unique(classification$Target) # Look at target variable
 ```
 
-
-```{r}
-unique(classification$Target) # Look at target variables
-```
-
-
-
-## Data preprocessing
-
-### Make the target variable
-
-```{r}
-classification_target <- classification$Target
-str(classification_target) # of type integer 
-```
-
-### Make features
-
-```{r}
-classification_features <- classification[,1:21]
-```
 
 ## Exploratory data analysis 
 
-Visualise spread of variables
+### Feature Distribution and Standardisation Recommendation
+
+The spread of the data for the 21 variables was visualised in _Figure 1_ below. It was evident that the ranges of these values varied significantly, with differing scales and distributions. This disparity in feature ranges could have impacted the performance of machine learning models, particularly in the application of neural networks, which are sensitive to the scale of input features. As a result, it was recommended that these features later be standardised to have a mean of 0 and a standard deviation of 1. This would allow the neural network model to converge more efficiently and ensure that all features contributed equally.
 
 ```{r include = TRUE, out.width="90%"}
 # Boxplot of spread of data
@@ -100,21 +83,19 @@ boxplot(classification_features,
 title(main = "Figure 1: Boxplot of 21 features")
 ```
 
-
-Per category 
+### Exploring Feature Differences by Target Category
 
 ```{r}
-classification_balanced$Target <- as.factor(classification_balanced$Target)
+classification$Target <- as.factor(classification$Target)
 # Create the faceted box plot
-ggplot(classification_balanced, 
+ggplot(classification, 
        aes(x = Target, 
            y = X10)) +
   geom_boxplot(fill = "lightblue", color = "black") +
   labs(x = "Target", y = "X1", title = "Box Plot of X1 by Target Category") +
   theme_minimal()
 ```
-
-## Check for imbalances in target variable
+### Check for imbalances in target variable
 
 Target variable data are highly imbalanced so we will later employ undersampling technique to handle this imbalance. 
 
@@ -128,7 +109,7 @@ prop.table(table(classification$Target))
 # Convert Target to a factor if it is not already
 classification$Target <- as.factor(classification$Target)
 
-# Visualize the distribution of the Target variable
+# Visualise the distribution of the Target variable
 ggplot(classification, 
        aes(x = Target)) +
   geom_bar(fill = "skyblue", color = "black") +
@@ -136,6 +117,8 @@ ggplot(classification,
   theme_minimal()
 
 ```
+
+## Correct target variable imbalance using undersampling 
 
 ```{r}
 # Correct imbalance using undersampling
@@ -152,6 +135,23 @@ classification_balanced <- classification %>%
 table(classification_balanced$Target) 
 ```
 
+
+## Data preprocessing
+
+### Make the target variable
+
+```{r}
+classification_target <- classification_balanced$Target
+str(classification_target) # of type integer 
+```
+
+### Make features
+
+```{r}
+classification_features <- classification_balanced[,1:21]
+```
+
+
 ## Split into test and train data
 
 First we set the seed for reproducibility
@@ -159,7 +159,8 @@ First we set the seed for reproducibility
 ```{r}
 # Determine sample size
 set.seed(123)
-ind <- sample(1:2, nrow(classification), 
+ind <- sample(1:2, 
+              nrow(classification_balanced), 
               replace=TRUE, 
               prob=c(0.8, 0.2))
 
@@ -216,12 +217,13 @@ Built a basic feed-forward neural network using Keras
 ### Create and define model
 
 ```{r}
-input <- layer_input(shape = c(21)) # input shape = 10 since we have 10 features
+input <- layer_input(shape = c(21)) # input shape = 21 since we have 21 features
 
 output <- input %>% 
     layer_dense(units = 8, activation = 'relu') %>% # only using one layer, can adjust units for complexity
     layer_dropout(rate = 0.5) %>% # can adjust drop out rate 
-    layer_dense(units = 5, activation = 'softmax') # output for 5 classes (0-4)
+    layer_dense(units = 5, # output for 5 classes (0-4)
+                activation = 'softmax') # softmax activation function
 
 model <- keras_model(inputs = input, outputs = output)
 
@@ -235,7 +237,7 @@ summary(model)
 model %>% compile(
   loss = 'categorical_crossentropy', # loss function for multi-class classification
   # optimizer instance
-  optimizer = optimizer_adam(learning_rate = 0.001),
+  optimizer = optimizer_adam(learning_rate = 0.1),
   # evaluate the model (during training & testing) based on the following metrics:
   metrics =  c('accuracy'),
 )
@@ -246,8 +248,8 @@ model %>% compile(
 ```{r}
 history <- model %>% fit(
   x_train, y_train, 
-  epochs = 50, # nr of times model trains on the entire data set
-  batch_size = 50, # # nr of samples processed before updating the model
+  epochs = 500, # nr of times model trains on the entire data set
+  batch_size = 25, # # nr of samples processed before updating the model
   validation_split = 0.2, # using 20% of data for validation
   shuffle = TRUE # shuffle training data before each epoch
 )
