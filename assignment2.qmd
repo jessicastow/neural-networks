@@ -491,7 +491,6 @@ apply(x_test_r, 2, mean)
 apply(x_test_r, 2, sd)
 ```
 
-
 ## Model building
 
 ### Create and define model
@@ -500,9 +499,10 @@ apply(x_test_r, 2, sd)
 input_r <- layer_input(shape = c(8))
 
 output_r <- input_r %>% 
-    layer_dense(units = 10, activation = 'relu') %>% 
-    layer_dropout(rate = 0.25) %>%
-    layer_dense(units = 10, activation = 'relu') %>%
+    layer_dense(units = 64, activation = 'relu') %>% 
+    layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 32, activation = 'relu') %>%
+    layer_dropout(rate = 0.2) %>%
     layer_dense(units = 1, activation = 'linear')
 ```
 
@@ -518,9 +518,9 @@ Compile model
 
 ```{r}
 model_r %>% compile(
-  loss = 'mean_absolute_error',
+  loss = 'mean_squared_error',
   optimizer = optimizer_adam(learning_rate = 0.01),
-  metrics = c('mean_absolute_percentage_error'),
+  metrics = c('mean_squared_error'),
 )
 ```
 
@@ -534,15 +534,14 @@ shuffled_indices_r <- sample(1:nrow(x_train_r))
 x_train_r <- x_train_r[shuffled_indices_r, ]
 y_train_r <- y_train_r[shuffled_indices_r]
 
-
-
 history_r <- model_r %>% fit(
   as.matrix(x_train_r), 
   as.matrix(y_train_r), 
-  epochs = 30, 
+  epochs = 50, 
   batch_size = 32, 
   validation_split = 0.2, 
-  shuffle = TRUE
+  shuffle = TRUE,
+  callbacks = list(callback_early_stopping(monitor = "val_loss", patience = 10))
 )
 ```
 ```{r}
@@ -559,5 +558,19 @@ Evaluate model
 
 ```{r}
 hist(preds_r$abs_error)
+```
+
+```{r}
+options(repr.plot.width = 20, repr.plot.height = 8)
+
+ggplot(preds_r, 
+       aes(x = true_value, 
+           y = pred_value)) +
+    geom_point(size = 2) +
+  labs(title = "Predicted value vs True value",
+       x = "True value",
+       y = "Predicted value") +
+  theme_minimal() + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red")
 ```
 
