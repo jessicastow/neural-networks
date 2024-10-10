@@ -14,9 +14,9 @@ knitr::opts_chunk$set(echo = FALSE,
                       cache = TRUE)
 ```
 
-# View this report on my GitHub profile!
+# Explore this report on my GitHub!
 
-This report's repository can be viewed on [my GitHub profile](https://github.com/jessicastow/neural-networks).
+You can access the repository for this report on [my GitHub profile](https://github.com/jessicastow/neural-networks).
 
 # Plagiarism declaration
 
@@ -46,13 +46,17 @@ library(ggplot2)
 
 # Introduction to Neural Networks
 
+Neural networks, the cornerstone of deep learning, encompass a large class of models and machine learning methods
+
+A neural network takes an input vector of *p* variables **X** = (X₁, X₂, . . . , Xₚ) and builds a nonlinear function **f(X)** to predict the response **Y**.
+
 # Multi-class Classification using Neural Networks
 
 ## Objective
 
 The objective of this task was to employ a neural network to predict a single target variable using a set of feature variables. The aim was to demonstrate the ability to apply neural networks as a suitable tool for addressing a classification problem.
 
-## Data description 
+## Data description
 
 The dataset provided consisted of 21 numerical features, with the target variable being categorical and comprising five levels ("0", "1", "2", "3", and "4"). Limited information was available regarding the dataset features, which added a level of complexity when developing and fine-tuning the neural network to ensure accurate predictions.
 
@@ -64,23 +68,32 @@ str(classification[,1:21]) # Look at predictor variables
 unique(classification$Target) # Look at target variable
 ```
 
+## Exploratory data analysis
 
-## Exploratory data analysis 
+### Check for duplicates and null values
+
+Checks were done for the presence of duplicate entries and null values. No duplicate entries were found and there were no null values present.
+
+```{r}
+sum(duplicated(classification)) # no duplicates
+
+sum(is.na(classification)) # no nulls
+```
 
 ### Feature Distribution and Standardisation Recommendation
 
-The spread of the data for the 21 variables was visualised in _Figure 1_ below. It was evident that the ranges of these values varied significantly, with differing scales and distributions. This disparity in feature ranges could have impacted the performance of machine learning models, particularly in the application of neural networks, which are sensitive to the scale of input features. As a result, it was recommended that these features later be standardised to have a mean of 0 and a standard deviation of 1. This would allow the neural network model to converge more efficiently and ensure that all features contributed equally.
+The spread of the data for the 21 variables was visualised in *Figure 1* below. It was evident that the ranges of these values varied significantly, with differing scales and distributions. This disparity in feature ranges could have impacted the performance of machine learning models, particularly in the application of neural networks, which are sensitive to the scale of input features. As a result, it was recommended that these features later be standardised to have a mean of 0 and a standard deviation of 1. This would allow the neural network model to converge more efficiently and ensure that all features contributed equally.
 
 ```{r include = TRUE, out.width="90%"}
 # Boxplot of spread of data
 par(las=2, # rotate horizontal axis labels
     cex.axis = 0.6)
 
-boxplot(classification_features, 
+boxplot(classification[,1:21], 
         main = "", 
         horizontal = TRUE)
 
-title(main = "Figure 1: Boxplot of 21 features")
+title(main = "Figure 1: Boxplot of 21 features for classification task")
 ```
 
 ### Exploring Feature Differences by Target Category
@@ -95,9 +108,10 @@ ggplot(classification,
   labs(x = "Target", y = "X1", title = "Box Plot of X1 by Target Category") +
   theme_minimal()
 ```
+
 ### Check for imbalances in target variable
 
-Target variable data are highly imbalanced so we will later employ undersampling technique to handle this imbalance. 
+Target variable data are highly imbalanced so we will later employ undersampling technique to handle this imbalance.
 
 ```{r}
 # Check the frequency distribution of the Target column
@@ -118,7 +132,17 @@ ggplot(classification,
 
 ```
 
-## Correct target variable imbalance using undersampling 
+## Data preparation
+
+Once the data was loaded and explored, we applied the following preprocessing steps:
+
+1.  **Addressing target variable imbalance through undersampling:** To correct the class imbalance in the target variable, we used undersampling.
+
+-   We set a random seed for reproducibility, ensuring that the sampling process could be replicated for consistent results.
+
+-   The dataset was balanced by randomly selecting 310 observations from each category, as this was the size of the smallest class.
+
+-   By using undersampling, we created a balanced dataset where all target classes were equally represented. This approach helps improve the performance of our classification model by reducing bias towards the overrepresented classes.
 
 ```{r}
 # Correct imbalance using undersampling
@@ -127,38 +151,36 @@ set.seed(123) # For reproducibility
 
 # Balance the dataset so that each category in the Target has exactly 310 observations
 classification_balanced <- classification %>%
-  group_by(Target) %>%           # Group by the Target variable
-  sample_n(size = 310, replace = TRUE) %>%  # Sample 310 observations from each group, with replacement
-  ungroup()                      # Ungroup to return a regular data frame
-
+  group_by(Target) %>% # Group by the Target variable
+  sample_n(size = 310, replace = FALSE) %>%  # Sample 310 observations from each group, without replacement
+  ungroup() # Ungroup to return a regular data frame
+ 
 # Check the result to ensure each Target category has 310 observations
 table(classification_balanced$Target) 
 ```
 
+2.  **Creation of target variable and features:**
 
-## Data preprocessing
-
-### Make the target variable
+The target variable was separated from the feature set, where the target will serve as the predicted outcome, and the features will be used as inputs for modeling and further analysis.
 
 ```{r}
+# Make target
 classification_target <- classification_balanced$Target
-str(classification_target) # of type integer 
-```
 
-### Make features
-
-```{r}
+# Make features
 classification_features <- classification_balanced[,1:21]
 ```
 
+4.  **Data split:** The dataset was split into training and testing sets using a 80-20 split ratio.
 
-## Split into test and train data
+-   The data was split into the following shapes:
 
-First we set the seed for reproducibility
+(a) Training set: 1248 observations, 21 features
+(b) Testing set: 302 observations, 21 features
 
 ```{r}
 # Determine sample size
-set.seed(123)
+set.seed(123) # for reproducibility
 ind <- sample(1:2, 
               nrow(classification_balanced), 
               replace=TRUE, 
@@ -171,36 +193,64 @@ x_test <- classification_features[ind==2, ]
 # Split target
 y_train <- classification_target[ind==1]
 y_test <- classification_target[ind==2]
+
+# Check size 
+nrow(x_train) # 1248 observations
+nrow(x_test) # 302 observations
 ```
 
-## Scale features
+5.  **Feature scaling:**
+
+The features used in the training data was scaled to have a mean of 0 and a standard deviation of 1. The test data was then scaled based on the training data means and standard deviations.
 
 ```{r}
+# Scale training data
 x_train <- scale(x_train)
 
 # Confirm means and std devs are now 0 and 1
 apply(x_train, 2, mean)
-
 apply(x_train, 2, sd)
-```
 
-```{r}
 attributes(x_train) # previous means and sds stored here
+
+# Scale test data
+x_test <- scale(x_test, 
+                center = attr(x_train, "scaled:center"), 
+                scale = attr(x_train, "scaled:scale"))
+
+# Confirm means and std devs are now 0 and 1
+apply(x_test, 2, mean)
+apply(x_test, 2, sd)
 ```
 
-One-hot encoding Convert target to binary "dummy" variables
+6.  **One-hot encoding:** The integer-based target variable was transformed into a binary matrix using one-hot encoding, where each class is represented as its own binary variable, also known as "dummy variables."
 
 ```{r}
 y_train <- keras3::to_categorical(y_train)
 y_test_original <- y_test
 y_test <- keras3::to_categorical(y_test)
 
+# Check dimensions
 dim(y_train)
 ```
 
 ## Model building
 
-### Models
+### Create and define model
+
+A feedforward neural network was built to address this multi-class classification problem. This model consisted of an input layer, two dense layers and drop out layers, and one output layer. The layers used in this model were as follows:
+
+-   The input layer had a shape of 21, since all 21 features were fed into the model as input.
+
+-   The first (hidden) dense layer consisted of 64 neurons (units) and made use of the ReLU (Rectified Linear Unit) activation function - which introduces non-linearity into the model, allowing the model to learn complex patterns in the data it is trained on.
+
+-   A dropout layer which randomly drops 20% of the neurons during training to prevent overfitting.
+
+-   A second dense layer with 32 units and the ReLU activation function was then used. Having more than one dense layer enables the model to learn more complex representations of the data. The reason behind the reduction in the number of units (from 64 to 32) was to funnel the information learned by the model into a more precise form.
+
+-   A second dropout layer was again used to reduce overfitting.
+
+-   Finally, an output layer with 5 units, corresponding to the 5 classes in our target variable was used. For this layer, the softmax activation function was used since this is highly suitable for multi-class classification, since it is used to produce class probabilities. Softmax converts the output of the network into a probability distribution, where each of the 5 units will output a probability, and the sum of the probabilities across all units will equal 1. The class with the highest probability will be the predicted class.
 
 Three different activation functions for classification
 
@@ -214,17 +264,21 @@ Output: Produces values between -1 and 1, and is sometimes preferred over ReLU w
 
 Built a basic feed-forward neural network using Keras
 
-### Create and define model
-
 ```{r}
 input <- layer_input(shape = c(21)) # input shape = 21 since we have 21 features
 
 output <- input %>% 
-    layer_dense(units = 8, activation = 'relu') %>% # only using one layer, can adjust units for complexity
-    layer_dropout(rate = 0.5) %>% # can adjust drop out rate 
+    layer_dense(units = 64, activation = 'relu') %>% # can adjust units for complexity
+    layer_dropout(rate = 0.2) %>% # can adjust drop out rate
+    layer_dense(units = 32, activation = 'relu') %>%  # Additional layer
+    layer_dropout(rate = 0.2) %>% 
     layer_dense(units = 5, # output for 5 classes (0-4)
                 activation = 'softmax') # softmax activation function
+```
 
+The model was then defined by specifying the input and output layers. The intermediate dense and dropout layers were connected in a sequential manner.
+
+```{r}
 model <- keras_model(inputs = input, outputs = output)
 
 summary(model)
@@ -232,26 +286,36 @@ summary(model)
 
 ### Compile model
 
+The model was compiled in preparation for training for this multi-class classification task. The loss function used for measuring prediction error for multi-class classification was categorical crossentropy. The optimiser used was Adam, which optimises the model's weights using a learning rate of 0.001, helping to reduce the loss. The metric used to assess how well the model is predicting the correct class during traning and evaluation was accuracy.
+
 ```{r}
 # Configure model for training
 model %>% compile(
   loss = 'categorical_crossentropy', # loss function for multi-class classification
   # optimizer instance
-  optimizer = optimizer_adam(learning_rate = 0.1),
+  optimizer = optimizer_adam(learning_rate = 0.001),
   # evaluate the model (during training & testing) based on the following metrics:
-  metrics =  c('accuracy'),
+  metrics =  c('accuracy')
 )
 ```
 
 ### Model training
 
 ```{r}
+# Shuffle the data manually before splitting into training and validation
+set.seed(123)  # For reproducibility
+shuffled_indices <- sample(1:nrow(x_train))
+
+x_train <- x_train[shuffled_indices, ]
+y_train <- y_train[shuffled_indices, ]
+
 history <- model %>% fit(
   x_train, y_train, 
-  epochs = 500, # nr of times model trains on the entire data set
-  batch_size = 25, # # nr of samples processed before updating the model
+  epochs = 50, # nr of times model trains on the entire data set
+  batch_size = 50, # nr of samples processed before updating the model
   validation_split = 0.2, # using 20% of data for validation
-  shuffle = TRUE # shuffle training data before each epoch
+  shuffle = TRUE, # shuffle training data before each epoch
+  callbacks = list(callback_early_stopping(monitor = "val_loss", patience = 10))
 )
 
 plot(history)
@@ -279,21 +343,22 @@ table(y_test_original, y_test_hat)
 Append predictions
 
 ```{r}
-iris_testset <- classification %>% 
-  mutate(testset = ind == 2) %>%
-  filter(testset)
+# edit this code 
+#iris_testset <- classification %>% 
+ # mutate(testset = ind == 2) %>%
+ # filter(testset)
 
-iris_testset <- iris_testset %>%
-  mutate(obs_class = y_test_original, pred_class = y_test_hat)
+#iris_testset <- iris_testset %>%
+ # mutate(obs_class = y_test_original, pred_class = y_test_hat)
 
-wrong_predictions <- iris_testset %>% filter(pred_class != obs_class)
-head(wrong_predictions)
+#wrong_predictions <- iris_testset %>% filter(pred_class != obs_class)
+#head(wrong_predictions)
 
 ```
 
 ## Recommendations
 
-To address the class imbalance of the target variable we employed undersampling. Alternative methods: oversampling by duplicating or generating synthetic data (SMOTE), assigning class weights to emphasise minority classes during training. 
+To address the class imbalance of the target variable we employed undersampling. Alternative methods: oversampling by duplicating or generating synthetic data (SMOTE), assigning class weights to emphasise minority classes during training.
 
 # Regression task
 
@@ -305,3 +370,194 @@ str(regression)
 ```{r}
 regression$target
 ```
+
+```{r}
+head(regression)
+str(regression)
+```
+## EDA
+
+### Check for duplicates and null values
+
+Checks were done for the presence of duplicate entries and null values. 25 duplicate entries were found and removed, and there were no null values present.
+
+```{r}
+sum(duplicated(regression)) # 25 duplicates
+
+# drop duplicates
+regression <- regression[!duplicated(regression), ]
+
+# check duplicates were dropped
+sum(duplicated(regression)) # 0 duplicates
+
+sum(is.na(regression)) # no nulls
+```
+
+### Feature Distribution and Standardisation Recommendation
+
+The spread of the data for the 8 variables was visualised in *Figure 2* below. It was evident that the ranges of these values varied significantly, with differing scales and distributions. This disparity in feature ranges could have impacted the performance of machine learning models, particularly in the application of neural networks, which are sensitive to the scale of input features. As a result, it was recommended that these features later be standardised to have a mean of 0 and a standard deviation of 1. This would allow the neural network model to converge more efficiently and ensure that all features contributed equally.
+
+```{r include = TRUE, out.width="90%"}
+# Boxplot of spread of data
+par(las=2, # rotate horizontal axis labels
+    cex.axis = 0.6)
+
+boxplot(regression[,1:8], 
+        main = "", 
+        horizontal = TRUE)
+
+title(main = "Figure 2: Boxplot of 8 features for regression task")
+```
+
+### Spread of target variable
+
+Have values across a wide range (2.33 to 82.6) which include a handful of outliers on the upper end of the distribution. We have no ctext for this target variable. 
+
+```{r}
+min(regression$target)
+max(regression$target)
+```
+
+```{r include = TRUE, out.width="90%"}
+# Boxplot of spread of data
+par(las=2, # rotate horizontal axis labels
+    cex.axis = 0.6)
+
+boxplot(regression$target, 
+        main = "", 
+        horizontal = TRUE)
+
+title(main = "Figure 2: Boxplot of target variable")
+```
+
+## Data preparation
+
+1. Create features and target
+
+```{r}
+regression_features <- regression[,1:8]
+regression_target <- regression$target
+```
+
+**Data split:** The dataset was split into training and testing sets using a 80-20 split ratio.
+
+-   The data was split into the following shapes:
+
+(a) Training set: 850 observations, 8 features
+(b) Testing set: 200 observations, 8 features
+
+```{r}
+# Determine sample size
+set.seed(123) # for reproducibility
+ind <- sample(1:2, 
+              nrow(regression), 
+              replace=TRUE, 
+              prob=c(0.8, 0.2))
+
+# Split features
+x_train_r <- regression_features[ind==1, ]
+x_test_r <- regression_features[ind==2, ]
+
+# Split target
+y_train_r <- regression_target[ind==1]
+y_test_r <- regression_target[ind==2]
+
+# Check size 
+nrow(x_train_r) # 850 observations
+nrow(x_test_r) # 200 observations
+```
+
+**Feature scaling:**
+
+The features used in the training data was scaled to have a mean of 0 and a standard deviation of 1. The test data was then scaled based on the training data means and standard deviations.
+
+```{r}
+# Scale training data
+x_train_r <- scale(x_train_r)
+
+# Confirm means and std devs are now 0 and 1
+apply(x_train_r, 2, mean)
+apply(x_train_r, 2, sd)
+
+attributes(x_train_r) # previous means and sds stored here
+
+# Scale test data
+x_test_r <- scale(x_test_r, 
+                center = attr(x_train_r, "scaled:center"), 
+                scale = attr(x_train_r, "scaled:scale"))
+
+# Confirm means and std devs are now 0 and 1
+apply(x_test_r, 2, mean)
+apply(x_test_r, 2, sd)
+```
+
+
+## Model building
+
+### Create and define model
+
+```{r}
+input_r <- layer_input(shape = c(8))
+
+output_r <- input_r %>% 
+    layer_dense(units = 10, activation = 'relu') %>% 
+    layer_dropout(rate = 0.25) %>%
+    layer_dense(units = 10, activation = 'relu') %>%
+    layer_dense(units = 1, activation = 'linear')
+```
+
+
+```{r}
+model_r <- keras_model(inputs = input_r, 
+                       outputs = output_r)
+
+summary(model_r)
+```
+
+Compile model
+
+```{r}
+model_r %>% compile(
+  loss = 'mean_absolute_error',
+  optimizer = optimizer_adam(learning_rate = 0.01),
+  metrics = c('mean_absolute_percentage_error'),
+)
+```
+
+Model training
+
+```{r}
+# Shuffle the data manually before splitting into training and validation
+set.seed(123)  # For reproducibility
+shuffled_indices_r <- sample(1:nrow(x_train_r))
+
+x_train_r <- x_train_r[shuffled_indices_r, ]
+y_train_r <- y_train_r[shuffled_indices_r]
+
+
+
+history_r <- model_r %>% fit(
+  as.matrix(x_train_r), 
+  as.matrix(y_train_r), 
+  epochs = 30, 
+  batch_size = 32, 
+  validation_split = 0.2, 
+  shuffle = TRUE
+)
+```
+```{r}
+y_test_hat_r <- model_r %>% predict(x_test_r)
+
+preds_r <- data.frame(true_value = y_test_r, pred_value = y_test_hat_r)
+
+preds_r <- preds_r %>% 
+  mutate(abs_error = abs(true_value - pred_value))
+
+preds_r
+```
+Evaluate model
+
+```{r}
+hist(preds_r$abs_error)
+```
+
