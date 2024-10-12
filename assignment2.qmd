@@ -1,5 +1,5 @@
 ---
-title: "Assignment 2"
+title: "STA5073 Assignment 2: Neural Networks"
 format: pdf
 author: "Jessica Stow (STWJES003@MYUCT.AC.ZA)"
 date: "14 October 2024"
@@ -10,11 +10,10 @@ editor: visual
 knitr::opts_chunk$set(echo = FALSE,
                       error = FALSE,
                       include = FALSE,
-                      warning = FALSE, 
-                      cache = TRUE)
+                      warning = FALSE)
 ```
 
-# Explore this report on my GitHub!
+# View this report on my GitHub!
 
 You can access the repository for this report on [my GitHub profile](https://github.com/jessicastow/neural-networks).
 
@@ -46,7 +45,7 @@ library(ggplot2)
 
 # Introduction to Neural Networks
 
-Neural networks, the cornerstone of deep learning, encompass a large class of models and machine learning methods. A neural network is a multi-stage regression or classification model. They consist of an input layer, one or more hidden layers that utilise an activation function, which introduces non-linearity into the model to capture complex patterns in the data, and an output layer that produces the final prediction or classification result based on the learned representations (James et al. 2013).
+Neural networks, the cornerstone of deep learning, encompass a large class of models and machine learning methods. A neural network is a two-stage regression or classification model. They consist of an input layer, one or more hidden layers that utilise an activation function, which introduces non-linearity into the model to capture complex patterns in the data, and an output layer that produces the final prediction or classification result based on the learned representations (James et al. 2013).
 
 # Multi-class Classification using Neural Networks
 
@@ -67,6 +66,8 @@ str(classification[,1:21]) # Look at predictor variables
 
 unique(classification$Target) # Look at target variable
 ```
+
+\newpage
 
 ## Exploratory data analysis
 
@@ -126,7 +127,6 @@ prop.table(table(classification$Target))
 classification$Target <- as.factor(classification$Target)
 ```
 
-
 ```{r include=TRUE, out.width="90%"}
 # Visualise the distribution of the Target variable
 ggplot(classification, 
@@ -140,6 +140,8 @@ ggplot(classification,
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
   
 ```
+
+\newpage
 
 ## Data preparation
 
@@ -169,7 +171,7 @@ table(classification_balanced$Target)
 
 2.  **Creation of target variable and features:**
 
-The target variable was separated from the feature set, where the target will serve as the predicted outcome, and the features will be used as inputs for modelling and further analysis.
+-   The target variable was separated from the feature set, where the target will serve as the predicted outcome, and the features will be used as inputs for modelling and further analysis.
 
 ```{r}
 # Make target
@@ -186,7 +188,7 @@ classification_features <- classification_balanced[,1:21]
 (a) Training set: 1248 observations, 21 features
 (b) Testing set: 302 observations, 21 features
 
-The training set would later be split into a training and validation set using a 80-20 split ratio. 
+-   The training set would later be split into a training and validation set using a 80-20 split ratio.
 
 ```{r}
 # Determine sample size
@@ -211,7 +213,7 @@ nrow(x_test) # 302 observations
 
 5.  **Feature scaling:**
 
-The features used in the training data was scaled to have a mean of 0 and a standard deviation of 1. The test data was then scaled based on the training data means and standard deviations.
+-   The features used in the training data was scaled to have a mean of 0 and a standard deviation of 1. The test data was then scaled based on the training data means and standard deviations.
 
 ```{r}
 # Scale training data
@@ -233,7 +235,9 @@ apply(x_test, 2, mean)
 apply(x_test, 2, sd)
 ```
 
-6.  **One-hot encoding:** The integer-based target variable was transformed into a binary matrix using one-hot encoding, where each class is represented as its own binary variable, also known as "dummy variables".
+6.  **One-hot encoding:**
+
+-   The integer-based target variable was transformed into a binary matrix using one-hot encoding, where each class is represented as its own binary variable, also known as "dummy variables".
 
 ```{r}
 y_train <- keras3::to_categorical(y_train)
@@ -250,29 +254,17 @@ dim(y_train)
 
 A feedforward neural network was built to address this multi-class classification problem. This model consisted of an input layer, two dense layers and drop out layers, and one output layer. The layers used in this model were as follows:
 
--   The *input layer* had a shape of 21, since all 21 features were fed into the model as input.
+-   The **input layer** had a shape of 21, since all 21 features were fed into the model as input.
 
--   The *first (hidden) dense layer* consisted of 64 neurons (units) and made use of the ReLU (Rectified Linear Unit) activation function - which introduces non-linearity into the model, allowing the model to learn complex patterns in the data it is trained on.
+-   The **first (hidden) dense layer** consisted of 64 neurons (units) and made use of the ReLU (Rectified Linear Unit) activation function - which introduces non-linearity into the model, allowing the model to learn complex patterns in the data it is trained on.
 
--   A *dropout layer* which randomly drops 20% of the neurons during training to prevent overfitting.
+-   A **dropout layer** which randomly drops 20% of the neurons during training to prevent overfitting.
 
--   A *second dense layer* with 32 units and the ReLU activation function was then used. Having more than one dense layer enables the model to learn more complex representations of the data. The reason behind the reduction in the number of units (from 64 to 32) was to funnel the information learned by the model into a more precise form.
+-   A **second dense layer** with 32 units and the ReLU activation function was then used. Having more than one dense layer enables the model to learn more complex representations of the data. The reason behind the reduction in the number of units (from 64 to 32) was to funnel the information learned by the model into a more precise form.
 
--   A *second dropout layer* was again used to reduce overfitting.
+-   A **second dropout layer** was again used to reduce overfitting.
 
--   Finally, an *output layer* with 5 units, corresponding to the 5 classes in our target variable was used. For this layer, the softmax activation function was used since this is highly suitable for multi-class classification, since it is used to produce class probabilities. Softmax converts the output of the network into a probability distribution, where each of the 5 units will output a probability, and the sum of the probabilities across all units will equal 1. The class with the highest probability will be the predicted class.
-
-Three different activation functions for classification
-
-1.  Soft-max (for multi-class classification models ) -Output: Produces a probability distribution over multiple classes, where the sum of the probabilities is 1. -Layer: Typically applied in the final layer for multi-class classification tasks.
-
-2.  Relu (hidden layers fir multiclass classification models) Output: Rectified Linear Unit outputs the input directly if it is positive; otherwise, it outputs zero. Layer: Not used in the output layer, but widely used in hidden layers to add non-linearity.
-
-3.  tanh
-
-Output: Produces values between -1 and 1, and is sometimes preferred over ReLU when the data is expected to have negative values or benefit from symmetric activation. Layer: Typically used in hidden layers but not the output layer.
-
-Built a basic feed-forward neural network using Keras
+-   Finally, an **output layer** with 5 units, corresponding to the 5 classes in our target variable was used. For this layer, the softmax activation function was used since this is highly suitable for multi-class classification, since it is used to produce class probabilities. Softmax converts the output of the network into a probability distribution, where each of the 5 units will output a probability, and the sum of the probabilities across all units will equal 1. The class with the highest probability will be the predicted class.
 
 ```{r}
 input <- layer_input(shape = c(21)) # input shape = 21 since we have 21 features
@@ -294,22 +286,23 @@ model <- keras_model(inputs = input, outputs = output)
 summary(model)
 ```
 
-### Compile model
+### Model compilation
 
-The model was compiled in preparation for training for this multi-class classification task. The loss function used for measuring prediction error for multi-class classification was categorical crossentropy. The optimiser used was Adam, which optimises the model's weights using a learning rate of 0.001, helping to reduce the loss. The metric used to assess how well the model is predicting the correct class during traning and evaluation was accuracy.
+The model was compiled in preparation for the multi-class classification task. Categorical crossentropy was selected as the loss function to measure prediction error, as it is suited for multi-class problems. The Adam optimiser was used to adjust the model's weights, with a learning rate of 0.001, to minimise the loss function. Accuracy was chosen as the evaluation metric to assess the model's performance in predicting the correct class during both training and evaluation.
 
 ```{r}
 # Configure model for training
 model %>% compile(
   loss = 'categorical_crossentropy', # loss function for multi-class classification
-  # optimizer instance
-  optimizer = optimizer_adam(learning_rate = 0.001),
+  optimizer = optimizer_adam(learning_rate = 0.001), # optimizer instance = adam
   # evaluate the model (during training & testing) based on the following metrics:
   metrics =  c('accuracy')
 )
 ```
 
 ### Model training
+
+The data was first manually shuffled before splitting it into training and validation sets. This ensured the data was randomised. A set seed was used for reproducibility of the manual shuffle.
 
 ```{r}
 # Shuffle the data manually before splitting into training and validation
@@ -318,57 +311,90 @@ shuffled_indices <- sample(1:nrow(x_train))
 
 x_train <- x_train[shuffled_indices, ]
 y_train <- y_train[shuffled_indices, ]
+```
 
+Once the training data had been shuffled, the model was trained using the `fit()` function. The model trained over the entire data set 50 times (number of epochs set to 50). This was done by dividing the training data into batches of 50 samples, and once the model had processed each batch, the model's weights were updated. This was done to help the model learn more efficiently as the updates to weights could be made more frequently instead of waiting for the entire data set to be trained on. Before each epoch, the training data was shuffled to ensure the model did not learn any patterns based on the order of the data.
+
+20% of the data of the training data was used for validation during training. This allowed the model to be evaluated on unseen data after each epoch in order to monitor its performance and prevent overfitting.
+
+Finally, an early stopping mechanism was included to monitor validation loss. Should the validation loss not improve for 10 consecutive epochs, the training will stop early. This is done to prevent overfitting and to save time by avoiding any unnecessary model training that does not improve the performance of the model.
+
+```{r}
 history <- model %>% fit(
   x_train, y_train, 
   epochs = 50, # nr of times model trains on the entire data set
   batch_size = 50, # nr of samples processed before updating the model
-  validation_split = 0.2, # using 20% of data for validation
+  validation_split = 0.2, # using (the last) 20% of data for validation
   shuffle = TRUE, # shuffle training data before each epoch
   callbacks = list(callback_early_stopping(monitor = "val_loss", patience = 10))
 )
 
+history # final
+```
+
+```{r include = TRUE, out.width="90%"}
+# Manually add title later "Figure 3: Model Training and Validation Performance"
 plot(history)
 ```
 
-### Model evaluation
+### Model performance evaluation
 
-Evaluate model perfromace on test data
+The trained model's performance was evaluated on the test data.
+
+The confusion matrix for the model predictions versus true classifications are displayed below in *Table 1*:
+
+#### Table 1: Confusion Matrix
+
+| **True Label / Predicted Label** | **0** | **1** | **2** | **3** | **4** |
+|----------------------------------|-------|-------|-------|-------|-------|
+| **0**                            | 55    | 1     | 0     | 0     | 0     |
+| **1**                            | 0     | 69    | 0     | 1     | 0     |
+| **2**                            | 0     | 0     | 59    | 0     | 0     |
+| **3**                            | 2     | 0     | 1     | 54    | 0     |
+| **4**                            | 0     | 0     | 0     | 0     | 60    |
+
+\* *Note: rows represent true labels and columns represent predicted labels.*
+
+Only 5 out of the 302 test predictions were misclassified, allowing for a high accuracy score of 98%.
+
+The misclassifications for our test set were as follows:
+
+-   For class 0, there was one observation misclassified as class 1.
+-   For class 1, there was one observation misclassified as class 3.
+-   For class 3, there were three observations misclassified. Two of the observations were misclassified as class 0 and one was misclassified as class 2. This class had the most misclassifications of all 5 classes.
+
+For classes 2 and 4 there were no misclassifications.
 
 ```{r}
 model %>% evaluate(x_test, y_test)
-```
 
-Confusion matrix
-
-```{r}
 y_test_hat <- model %>% 
   predict(x_test) %>% 
   op_argmax(axis=2) %>% 
   as.numeric()
 
-table(y_test_original, y_test_hat)
+table(y_test_original, y_test_hat) # display confusion matrix
 ```
 
-Append predictions
+\newpage 
 
-```{r}
-# edit this code 
-#iris_testset <- classification %>% 
- # mutate(testset = ind == 2) %>%
- # filter(testset)
+## Discussion
 
-#iris_testset <- iris_testset %>%
- # mutate(obs_class = y_test_original, pred_class = y_test_hat)
+The implementation of a neural network for this multi-class classification challenge proved to be highly effective, as shown by the model's high accuracy scores on both the training and testing datasets. Following data preprocessing — which included addressing class imbalances and normalising the feature set — the model achieved an accuracy of 98% on the test set. This strong performance indicates the model's ability to generalise well on unseen data.
 
-#wrong_predictions <- iris_testset %>% filter(pred_class != obs_class)
-#head(wrong_predictions)
+The confusion matrix further illustrates that the model performed well across all five classes, with only five misclassifications out of 302 test observations. Notably, the majority of misclassification errors were in class 3, which was the most underrepresented class in the original dataset. This suggests that while the undersampling method helped to balance the dataset, the model may have struggled to learn the distinguishing patterns associated with class 3 due to its limited representation.
 
-```
+The architecture of the neural network, which used ReLU activation functions in the hidden layers and a softmax activation function in the output layer, was well-suited for this classification task. The inclusion of dropout layers effectively mitigated overfitting, as demonstrated by stable performance on the validation set throughout training. Additionally, implementing early stopping ensured that the model did not overtrain, resulting in a more robust final model.
+
+## Conclusion
+
+In conclusion, the neural network model developed for this multi-class classification problem exhibited exceptional performance, achieving a high accuracy score and minimal misclassifications. The preprocessing steps, particularly those aimed at balancing the dataset through undersampling and feature scaling, are believed to have contributed to the model's effectiveness. However, some misclassifications persisted, particularly within the underrepresented class 3. This highlights an opportunity for further refinement in handling class imbalances.
 
 ## Recommendations
 
-To address the class imbalance of the target variable we employed undersampling. Alternative methods: oversampling by duplicating or generating synthetic data (SMOTE), assigning class weights to emphasise minority classes during training.
+To further improve the model’s performance, it is recommended to explore alternative methods for addressing class imbalances. Techniques such as oversampling or synthetic data generation methods, such as SMOTE, could improve the model’s ability to effectively classify minority classes. Additionally, experimenting with different models, activation functions or hyperparameter tuning may yield further improvements. Overall, the results demonstrate the effectiveness and flexibility of neural networks in tackling complex classification tasks, even when faced with challenges such as data imbalance.
+
+\newpage
 
 # Regression task
 
@@ -385,6 +411,7 @@ regression$target
 head(regression)
 str(regression)
 ```
+
 ## EDA
 
 ### Check for duplicates and null values
@@ -421,7 +448,7 @@ title(main = "Figure 2: Boxplot of 8 features for regression task")
 
 ### Spread of target variable
 
-Have values across a wide range (2.33 to 82.6) which include a handful of outliers on the upper end of the distribution. We have no ctext for this target variable. 
+Have values across a wide range (2.33 to 82.6) which include a handful of outliers on the upper end of the distribution. We have no ctext for this target variable.
 
 ```{r}
 min(regression$target)
@@ -442,7 +469,7 @@ title(main = "Figure 2: Boxplot of target variable")
 
 ## Data preparation
 
-1. Create features and target
+1.  Create features and target
 
 ```{r}
 regression_features <- regression[,1:8]
@@ -516,7 +543,6 @@ output_r <- input_r %>%
     layer_dense(units = 1, activation = 'linear')
 ```
 
-
 ```{r}
 model_r <- keras_model(inputs = input_r, 
                        outputs = output_r)
@@ -554,6 +580,7 @@ history_r <- model_r %>% fit(
   callbacks = list(callback_early_stopping(monitor = "val_loss", patience = 10))
 )
 ```
+
 ```{r}
 y_test_hat_r <- model_r %>% predict(x_test_r)
 
@@ -564,6 +591,7 @@ preds_r <- preds_r %>%
 
 preds_r
 ```
+
 Evaluate model
 
 ```{r}
@@ -586,4 +614,4 @@ ggplot(preds_r,
 
 # References
 
-James, G., Witten, D., Hastie, T. and Tibshirani, R. (2013). An introduction to statistical learning: with applications in R. New York: Springer. 
+James, G., Witten, D., Hastie, T. and Tibshirani, R. (2013). An introduction to statistical learning: with applications in R. New York: Springer.
