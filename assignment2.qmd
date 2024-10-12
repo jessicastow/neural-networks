@@ -48,9 +48,9 @@ library(ggplot2)
 
 Neural networks, the cornerstone of deep learning, encompass a large class of models and machine learning methods. A neural network is a multi-stage regression or classification model. They consist of an input layer, one or more hidden layers that utilise an activation function, which introduces non-linearity into the model to capture complex patterns in the data, and an output layer that produces the final prediction or classification result based on the learned representations (James et al. 2013).
 
-A neural network takes an input vector of *p* variables **X** = (X₁, X₂, . . . , Xₚ) and builds a nonlinear function **f(X)** to predict the response **Y**.
-
 # Multi-class Classification using Neural Networks
+
+In this report, we utilise a neural network to perform multi-class classification and assess its suitability for the task. In neural networks, multi-class classification typically begins with an input layer, where the number of units corresponds to the number of features describing the data. This is followed by one or more hidden layers, which may include dense layers and dropout layers to prevent overfitting. Finally, the output layer contains a number of units equal to the possible classification classes, predicting the class to which each data point belongs.
 
 ## Objective
 
@@ -111,7 +111,9 @@ ggplot(classification,
 
 ### Check for imbalances in target variable
 
-Target variable data are highly imbalanced so we will later employ undersampling technique to handle this imbalance.
+It was observed that the target variable was highly imbalanced, as shown below in **Figure 2**. Imbalanced classes are not ideal, as they can lead to the model becoming biased in its predictions, with the model favouring the dominant class. This imbalance is evident in the dataset, where class 2 is significantly overrepresented with 3478 observations, while class 3, with only 310 observations, is underrepresented. Such disparity can result in the model performing poorly when identifying the minority class, which in this case is class 3.
+
+Other concerns related to imbalanced datasets include the challenge of generalisation, as models trained on skewed data often struggle to perform well on unseen data. Additionally, models can become more unstable and less reliable. To mitigate the bias towards the larger classes, particularly class 2, undersampling techniques were applied to balance the dataset and improve the model's performance across all classes.
 
 ```{r}
 # Check the frequency distribution of the Target column
@@ -122,14 +124,21 @@ prop.table(table(classification$Target))
 
 # Convert Target to a factor if it is not already
 classification$Target <- as.factor(classification$Target)
+```
 
+
+```{r include=TRUE, out.width="90%"}
 # Visualise the distribution of the Target variable
 ggplot(classification, 
        aes(x = Target)) +
-  geom_bar(fill = "skyblue", color = "black") +
-  labs(x = "Target", y = "Count", title = "Distribution of Target Categories") +
-  theme_minimal()
-
+  geom_bar(fill = "skyblue3", 
+           color = "black") +
+  labs(x = "Target", 
+       y = "Count", 
+       title = "Figure 2: Distribution of Target Categories") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+  
 ```
 
 ## Data preparation
@@ -146,7 +155,6 @@ Once the data was loaded and explored, we applied the following preprocessing st
 
 ```{r}
 # Correct imbalance using undersampling
-
 set.seed(123) # For reproducibility
 
 # Balance the dataset so that each category in the Target has exactly 310 observations
@@ -161,7 +169,7 @@ table(classification_balanced$Target)
 
 2.  **Creation of target variable and features:**
 
-The target variable was separated from the feature set, where the target will serve as the predicted outcome, and the features will be used as inputs for modeling and further analysis.
+The target variable was separated from the feature set, where the target will serve as the predicted outcome, and the features will be used as inputs for modelling and further analysis.
 
 ```{r}
 # Make target
@@ -177,6 +185,8 @@ classification_features <- classification_balanced[,1:21]
 
 (a) Training set: 1248 observations, 21 features
 (b) Testing set: 302 observations, 21 features
+
+The training set would later be split into a training and validation set using a 80-20 split ratio. 
 
 ```{r}
 # Determine sample size
@@ -223,7 +233,7 @@ apply(x_test, 2, mean)
 apply(x_test, 2, sd)
 ```
 
-6.  **One-hot encoding:** The integer-based target variable was transformed into a binary matrix using one-hot encoding, where each class is represented as its own binary variable, also known as "dummy variables."
+6.  **One-hot encoding:** The integer-based target variable was transformed into a binary matrix using one-hot encoding, where each class is represented as its own binary variable, also known as "dummy variables".
 
 ```{r}
 y_train <- keras3::to_categorical(y_train)
@@ -234,23 +244,23 @@ y_test <- keras3::to_categorical(y_test)
 dim(y_train)
 ```
 
-## Model building
+## Multi-class classification model building
 
 ### Create and define model
 
 A feedforward neural network was built to address this multi-class classification problem. This model consisted of an input layer, two dense layers and drop out layers, and one output layer. The layers used in this model were as follows:
 
--   The input layer had a shape of 21, since all 21 features were fed into the model as input.
+-   The *input layer* had a shape of 21, since all 21 features were fed into the model as input.
 
--   The first (hidden) dense layer consisted of 64 neurons (units) and made use of the ReLU (Rectified Linear Unit) activation function - which introduces non-linearity into the model, allowing the model to learn complex patterns in the data it is trained on.
+-   The *first (hidden) dense layer* consisted of 64 neurons (units) and made use of the ReLU (Rectified Linear Unit) activation function - which introduces non-linearity into the model, allowing the model to learn complex patterns in the data it is trained on.
 
--   A dropout layer which randomly drops 20% of the neurons during training to prevent overfitting.
+-   A *dropout layer* which randomly drops 20% of the neurons during training to prevent overfitting.
 
--   A second dense layer with 32 units and the ReLU activation function was then used. Having more than one dense layer enables the model to learn more complex representations of the data. The reason behind the reduction in the number of units (from 64 to 32) was to funnel the information learned by the model into a more precise form.
+-   A *second dense layer* with 32 units and the ReLU activation function was then used. Having more than one dense layer enables the model to learn more complex representations of the data. The reason behind the reduction in the number of units (from 64 to 32) was to funnel the information learned by the model into a more precise form.
 
--   A second dropout layer was again used to reduce overfitting.
+-   A *second dropout layer* was again used to reduce overfitting.
 
--   Finally, an output layer with 5 units, corresponding to the 5 classes in our target variable was used. For this layer, the softmax activation function was used since this is highly suitable for multi-class classification, since it is used to produce class probabilities. Softmax converts the output of the network into a probability distribution, where each of the 5 units will output a probability, and the sum of the probabilities across all units will equal 1. The class with the highest probability will be the predicted class.
+-   Finally, an *output layer* with 5 units, corresponding to the 5 classes in our target variable was used. For this layer, the softmax activation function was used since this is highly suitable for multi-class classification, since it is used to produce class probabilities. Softmax converts the output of the network into a probability distribution, where each of the 5 units will output a probability, and the sum of the probabilities across all units will equal 1. The class with the highest probability will be the predicted class.
 
 Three different activation functions for classification
 
