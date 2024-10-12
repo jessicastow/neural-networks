@@ -46,7 +46,7 @@ library(ggplot2)
 
 # Introduction to Neural Networks
 
-Neural networks, the cornerstone of deep learning, encompass a large class of models and machine learning methods
+Neural networks, the cornerstone of deep learning, encompass a large class of models and machine learning methods. A neural network is a multi-stage regression or classification model. They consist of an input layer, one or more hidden layers that utilise an activation function, which introduces non-linearity into the model to capture complex patterns in the data, and an output layer that produces the final prediction or classification result based on the learned representations (James et al. 2013).
 
 A neural network takes an input vector of *p* variables **X** = (X₁, X₂, . . . , Xₚ) and builds a nonlinear function **f(X)** to predict the response **Y**.
 
@@ -574,3 +574,6 @@ ggplot(preds_r,
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red")
 ```
 
+# References
+
+James, G., Witten, D., Hastie, T. and Tibshirani, R. (2013). An introduction to statistical learning: with applications in R. New York: Springer. 
