@@ -396,7 +396,11 @@ To further improve the model’s performance, it is recommended to explore alter
 
 \newpage
 
-# Regression task
+# Regression task using Neural Networks
+
+## Objective
+
+## Data description
 
 ```{r}
 regression <- read.csv("data/Data-regression.csv")
