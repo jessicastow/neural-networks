@@ -250,7 +250,7 @@ dim(y_train)
 
 ## Multi-class classification model building
 
-### Create and define model
+### Model definition and creation
 
 A feedforward neural network was built to address this multi-class classification problem. This model consisted of an input layer, two dense layers and drop out layers, and one output layer. The layers used in this model were as follows:
 
@@ -331,11 +331,23 @@ history <- model %>% fit(
 
 history # final
 ```
+The two plots below show the model's performance during training and validation, using accuracy and loss across 50 epochs. The red lines indicate the performance of the training data, whereas the blue lines indicate the performance of the validation data.
+
+**Accuracy:** The model's accuracy on the training data shows a steady improvement over the first 15-20 epochs, and stabilies close to 100% thereafter. This suggests the model is learning patterns in the training data well. Similarly, the validation accuracy also steadily increases as the training progresses, stabilising close to 100% after epoch ~20. This indicates the model generalises well to unseen data and does not tend to overfit. 
+
+*Loss:** The training loss decreases steadily, indicating that the model's predictions on the training data are becoming more accurate. The model converges to a low loss value, which corresponds to the high accuracy observed.
+
+Similarly, the validation loss decreases, with both curves closely following each other. The fact that the validation loss remains low and does not diverge from the training loss indicates that the model is not overfitting and is making reliable predictions on unseen data.
+
+Overall, the insights from these plots indicate that the model does not show signs of overfitting (and thus generalises well to unseen data) and converges after approximately epoch 20 where the performance of both the training and validation sets stabilises. 
+
 
 ```{r include = TRUE, out.width="90%"}
 # Manually add title later "Figure 3: Model Training and Validation Performance"
 plot(history)
 ```
+
+\newpage
 
 ### Model performance evaluation
 
@@ -398,25 +410,24 @@ To further improve the model’s performance, it is recommended to explore alter
 
 # Regression task using Neural Networks
 
+In this report, we utilise a neural network to perform regression and assess its suitability for the task. In neural networks, regression typically begins with an input layer, where the number of units corresponds to the number of features describing the data. This is followed by one or more hidden layers, which may include dense layers and dropout layers to prevent overfitting. Finally, the output layer contains one neuron and a linear activation function to predict the value of the data point using a combination of the features. 
+
 ## Objective
 
+The objective of this task was to employ a neural network to predict a target variable using a set of 8 feature variables. The aim was to demonstrate the ability to apply neural networks as a suitable tool for addressing a regression problem.
+
 ## Data description
+
+The dataset provided consisted of 8 numerical features, with the target variable being numeric. Limited information was available regarding the dataset features, which added a level of complexity when developing and fine-tuning the neural network to ensure accurate predictions.
 
 ```{r}
 regression <- read.csv("data/Data-regression.csv")
 str(regression)
 ```
 
-```{r}
-regression$target
-```
+\newpage 
 
-```{r}
-head(regression)
-str(regression)
-```
-
-## EDA
+## Exploratory Data Analysis
 
 ### Check for duplicates and null values
 
@@ -436,7 +447,7 @@ sum(is.na(regression)) # no nulls
 
 ### Feature Distribution and Standardisation Recommendation
 
-The spread of the data for the 8 variables was visualised in *Figure 2* below. It was evident that the ranges of these values varied significantly, with differing scales and distributions. This disparity in feature ranges could have impacted the performance of machine learning models, particularly in the application of neural networks, which are sensitive to the scale of input features. As a result, it was recommended that these features later be standardised to have a mean of 0 and a standard deviation of 1. This would allow the neural network model to converge more efficiently and ensure that all features contributed equally.
+The spread of the data for the 8 variables was visualised in *Figure 4* below. It was evident that the ranges of these values varied significantly, with differing scales and distributions. This disparity in feature ranges could have impacted the performance of machine learning models, particularly in the application of neural networks, which are sensitive to the scale of input features. As a result, it was recommended that these features later be standardised to have a mean of 0 and a standard deviation of 1. This would allow the neural network model to converge more efficiently and ensure that all features contributed equally.
 
 ```{r include = TRUE, out.width="90%"}
 # Boxplot of spread of data
@@ -447,12 +458,12 @@ boxplot(regression[,1:8],
         main = "", 
         horizontal = TRUE)
 
-title(main = "Figure 2: Boxplot of 8 features for regression task")
+title(main = "Figure 4: Boxplot of 8 features for regression task")
 ```
 
 ### Spread of target variable
 
-Have values across a wide range (2.33 to 82.6) which include a handful of outliers on the upper end of the distribution. We have no ctext for this target variable.
+The target variable has values across a wide range (2.33 to 82.6) which include a handful of outliers on the upper end of the distribution. *Figure 5* below shows the mostly uniform distribution of the target variable used in this regression task.
 
 ```{r}
 min(regression$target)
@@ -468,24 +479,28 @@ boxplot(regression$target,
         main = "", 
         horizontal = TRUE)
 
-title(main = "Figure 2: Boxplot of target variable")
+title(main = "Figure 5: Boxplot of target variable")
 ```
 
 ## Data preparation
 
-1.  Create features and target
+1.  **Create features and target:**
+
+-   The target variable was separated from the feature set, where the target will serve as the predicted outcome, and the features will be used as inputs for modelling and further analysis.
 
 ```{r}
 regression_features <- regression[,1:8]
 regression_target <- regression$target
 ```
 
-**Data split:** The dataset was split into training and testing sets using a 80-20 split ratio.
+2.  **Data split:** The dataset was split into training and testing sets using a 80-20 split ratio.
 
 -   The data was split into the following shapes:
 
 (a) Training set: 850 observations, 8 features
 (b) Testing set: 200 observations, 8 features
+
+-   The training set would later be split into a training and validation set using a 80-20 split ratio.
 
 ```{r}
 # Determine sample size
@@ -510,7 +525,7 @@ nrow(x_test_r) # 200 observations
 
 **Feature scaling:**
 
-The features used in the training data was scaled to have a mean of 0 and a standard deviation of 1. The test data was then scaled based on the training data means and standard deviations.
+-   The features used in the training data was scaled to have a mean of 0 and a standard deviation of 1. The test data was then scaled based on the training data means and standard deviations.
 
 ```{r}
 # Scale training data
@@ -532,9 +547,23 @@ apply(x_test_r, 2, mean)
 apply(x_test_r, 2, sd)
 ```
 
-## Model building
+## Regression model building
 
-### Create and define model
+### Model definition and creation
+
+A feedforward neural network was built to address this regression problem. This model consisted of an input layer, two dense layers and drop out layers, and one output layer. The layers used in this model were as follows:
+
+-   The **input layer** had a shape of 8, since all 8 features were fed into the model as input.
+
+-   The **first (hidden) dense layer** consisted of 64 neurons (units) and made use of the ReLU (Rectified Linear Unit) activation function - which introduces non-linearity into the model, allowing the model to learn complex patterns in the data it is trained on.
+
+-   A **dropout layer** which randomly drops 20% of the neurons during training to prevent overfitting.
+
+-   A **second dense layer** with 32 neurons (units) and the ReLU activation function was then used. Having more than one dense layer enables the model to learn more complex representations of the data. The reason behind the reduction in the number of units (from 64 to 32) was to funnel the information learned by the model into a more precise form.
+
+-   A **second dropout layer** was again used to reduce overfitting.
+
+-   The **output layer** consists of one neuron, which produces the predicted outcome for the regression task. Since this is a regression problem, the output is a continuous value, and a linear activation function is used. The linear activation allows the model to predict a range of values without constraints.
 
 ```{r}
 input_r <- layer_input(shape = c(8))
@@ -547,6 +576,8 @@ output_r <- input_r %>%
     layer_dense(units = 1, activation = 'linear')
 ```
 
+The model was then defined by specifying the input and output layers. The intermediate dense and dropout layers were connected in a sequential manner.
+
 ```{r}
 model_r <- keras_model(inputs = input_r, 
                        outputs = output_r)
@@ -554,7 +585,9 @@ model_r <- keras_model(inputs = input_r,
 summary(model_r)
 ```
 
-Compile model
+### Model compilation
+
+The model was compiled in preparation for the regression task, with mean squared error (MSE) chosen as the loss function to measure prediction error, as it is well-suited to regression problems. The Adam optimiser was selected to update the model's weights, using a learning rate of 0.01. This learning rate is small enough to steadily reduce the loss function without causing abrupt weight changes. Mean squared error was used as the evaluation metric during both training and testing phases.
 
 ```{r}
 model_r %>% compile(
@@ -564,7 +597,9 @@ model_r %>% compile(
 )
 ```
 
-Model training
+### Model training
+
+The data was manually shuffled before being split into training and validation sets to ensure randomisation and eliminate any potential patterns based on the original order of the data. A random seed was set to ensure the shuffle process could be reproduced consistently.
 
 ```{r}
 # Shuffle the data manually before splitting into training and validation
@@ -573,7 +608,16 @@ shuffled_indices_r <- sample(1:nrow(x_train_r))
 
 x_train_r <- x_train_r[shuffled_indices_r, ]
 y_train_r <- y_train_r[shuffled_indices_r]
+```
 
+Once the training data had been shuffled, the model was trained using the `fit()` function. The model trained over the entire data set 50 times (number of epochs set to 50). This was done by dividing the training data into batches of 32 samples, and once the model had processed each batch, the model's weights were updated. This was done to help the model learn more efficiently as the updates to weights could be made more frequently instead of waiting for the entire data set to be trained on. Before each epoch, the training data was shuffled to ensure the model did not learn any patterns based on the order of the data.
+
+20% of the data of the training data was used for validation during training. This allowed the model to be evaluated on unseen data after each epoch in order to monitor its performance and prevent overfitting.
+
+Finally, an early stopping mechanism was included to monitor validation loss. Should the validation loss not improve for 10 consecutive epochs, the training will stop early. This is done to prevent overfitting and to save time by avoiding any unnecessary model training that does not improve the performance of the model.
+
+```{r cache=TRUE}
+set.seed(123)
 history_r <- model_r %>% fit(
   as.matrix(x_train_r), 
   as.matrix(y_train_r), 
@@ -583,38 +627,82 @@ history_r <- model_r %>% fit(
   shuffle = TRUE,
   callbacks = list(callback_early_stopping(monitor = "val_loss", patience = 10))
 )
+
+history_r
+```
+The two plots below show the model's performance during training and validation, using mean squared error and loss across 50 epochs. The red lines indicate the performance of the training data, whereas the blue lines indicate the performance of the validation data.
+
+**Loss:** The training loss starts high, decreases quickly during the first 15 epochs, and then plateaus around 90. This indicates that the model is learning and minimising errors on the training data over time.
+  
+The validation loss follows a similar trend to the training loss, decreasing steadily and stabilising after approximately 10 epochs. This indicates that the model generalises well to unseen data (validation set), as there is a small gap between training and validation loss.
+
+**MSE:** The mean squared error for the training data decreases rapidly at first and then stabilises after 15 epochs, indicating that the model's predictions are becoming closer to the true values as training progresses.
+  
+The validation MSE closely follows the same trend as the training MSE, which is a good sign that the model is not overfitting. The validation MSE stabilises at a low value of around 10 epochs, further suggesting that the model generalises well to the validation data.
+
+Overall, the training and validation curves for both loss and MSE are closely aligned, indicating that the model is not overfitting. If the validation curves had diverged significantly from the training curves, it would suggest overfitting.
+  
+The similar trends and values for the training and validation sets show that the model is performing well on both the data it was trained on and the unseen validation data, suggesting good generalisation to new data.
+
+In conclusion, the plot shows that the model is effectively learning, with both training and validation loss and MSE decreasing and stabilising at low values, and no significant overfitting is evident.
+
+\\
+\\
+\\
+
+```{r include=TRUE, out.width="90%", cache=TRUE}
+plot(history_r)
 ```
 
+\newpage
+
+### Model performance and evaluation 
+
+The performance of the trained model was evaluated using the test data, resulting in a mean squared error (MSE) of 53.19.
+
 ```{r}
+# Predict using the model
 y_test_hat_r <- model_r %>% predict(x_test_r)
 
+# Create a dataframe of true and predicted values
 preds_r <- data.frame(true_value = y_test_r, pred_value = y_test_hat_r)
 
+# Calculate squared errors
 preds_r <- preds_r %>% 
-  mutate(abs_error = abs(true_value - pred_value))
+  mutate(
+    squared_error = (true_value - pred_value)^2
+  )
 
-preds_r
+# Calculate MSE
+mean(preds_r$squared_error) # 53.19
 ```
 
-Evaluate model
+The predicted versus actual values were visualised in *Figure 6* below. When comparing the predicted values to the true values, the model shows a tendency to overpredict when the true value is less than 20, and to underpredict when the true values exceed 60. Overall, the predictions align reasonably well with the true values, as indicated by the points clustering around the red dashed line (which represents perfect predictions). However, there is noticeable variation in the predictions, with some points deviating from the ideal line, indicating that while the model captures the general trend, it struggles to predict extreme values accurately.
 
-```{r}
-hist(preds_r$abs_error)
-```
-
-```{r}
-options(repr.plot.width = 20, repr.plot.height = 8)
-
+```{r include=TRUE}
 ggplot(preds_r, 
        aes(x = true_value, 
            y = pred_value)) +
     geom_point(size = 2) +
-  labs(title = "Predicted value vs True value",
+  labs(title = "Figure 6: Predicted values vs True values",
        x = "True value",
        y = "Predicted value") +
   theme_minimal() + 
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red")
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  coord_fixed()  # Make the plot square
 ```
+
+## Discussion
+
+In this task, a feedforward neural network was employed to address a regression problem using 8 input features to predict a continuous target variable. The data underwent thorough preprocessing, including the removal of duplicates and the scaling of features to ensure better model convergence and performance. The model architecture consisted of two dense hidden layers with ReLU activation functions, interspersed with dropout layers to prevent overfitting, followed by a single-neuron output layer with a linear activation function suitable for regression tasks.
+
+During training, the model exhibited a rapid decrease in both loss and mean squared error (MSE) over the first 15 epochs, after which it stabilised. The validation performance closely followed the training performance, with minimal divergence between the training and validation curves. This suggests that the model was able to generalise well to unseen data, without significant overfitting. The application of dropout layers and early stopping helped to ensure that the model did not overfit to the training data, further evidenced by the stabilisation of the validation loss and MSE.
+
+Despite the model’s generally strong performance, the evaluation on the test data revealed some limitations. The mean squared error on the test set was 53.19, indicating a reasonable level of accuracy, though there were noticeable deviations in predictions, particularly for extreme values. The model tended to overpredict when the true values were below 20 and underpredict when they exceeded 60. While the model captured the overall trend, it struggled with outliers or extreme cases, suggesting that further tuning or a more complex model might be necessary to improve performance in such scenarios.
+
+## Conclusion
+
+The neural network successfully addressed the regression task, demonstrating strong generalisation to the validation and test data. The model was able to minimise both training and validation errors effectively, thanks to the use of dropout and early stopping mechanisms. The mean squared error of 53.19 on the test set highlights the model's capacity to predict reasonably well, though its difficulty in handling extreme values suggests that there is room for improvement. Future work could explore alternative architectures or hyperparameter tuning to further enhance the model’s predictive performance, particularly in relation to edge cases and outliers. Overall, the neural network proved to be a robust tool for this regression problem, showcasing its flexibility and effectiveness in handling complex, multi-feature datasets.
 
 # References
 
